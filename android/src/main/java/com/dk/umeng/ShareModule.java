@@ -10,15 +10,12 @@ import android.text.TextUtils;
 import android.util.Log;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
-import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
-import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.umeng.commonsdk.framework.UMWorkDispatch;
-import com.umeng.socialize.PlatformConfig;
 import com.umeng.socialize.ShareAction;
 import com.umeng.socialize.UMAuthListener;
 import com.umeng.socialize.UMShareAPI;
@@ -47,7 +44,6 @@ public class ShareModule extends ReactContextBaseJavaModule {
     public static void initSocialSDK(Activity activity){
         ma = activity;
     }
-
     @Override
     public String getName() {
         return "UMShareModule";
@@ -55,36 +51,8 @@ public class ShareModule extends ReactContextBaseJavaModule {
     private static void runOnMainThread(Runnable runnable) {
         mSDKHandler.postDelayed(runnable, 0);
     }
-
     @ReactMethod
-    public void setAccount(ReadableMap conf) {
-        Integer type = conf.getInt("type");
-        String appId = conf.getString("appId");
-        String secret = conf.getString("secret");
-        String redirectUrl = "";
-        if(conf.hasKey("redirectURL")){
-            redirectUrl = conf.getString("redirectURL");
-        }
-        switch (type){
-            case 0:
-                PlatformConfig.setQQZone(appId, secret);
-            case 1:
-                PlatformConfig.setSinaWeibo(appId, secret, redirectUrl);
-            case 2:
-                PlatformConfig.setWeixin(appId, secret);
-            default:
-                PlatformConfig.setQQZone(appId, secret);
-        }
-
-    }
-
-    @ReactMethod
-    public void share(final ReadableMap msg, final Promise promise){
-        final String text = msg.getString("text");
-        final String img = msg.getString("image");
-        final String weburl = msg.getString("weburl");
-        final String title = msg.getString("title");
-        final int sharemedia = msg.getInt("sharemedia");
+    public void share(final String text, final String img, final String weburl, final String title, final int sharemedia, final Callback successCallback){
         runOnMainThread(new Runnable() {
             @Override
             public void run() {
@@ -97,28 +65,28 @@ public class ShareModule extends ReactContextBaseJavaModule {
                         web.setThumb(getImage(img));
                     }
                     new ShareAction(ma).withText(text)
-                        .withMedia(web)
-                        .setPlatform(getShareMedia(sharemedia))
-                        .setCallback(getUMShareListener(promise))
-                        .share();
+                            .withMedia(web)
+                            .setPlatform(getShareMedia(sharemedia))
+                            .setCallback(getUMShareListener(successCallback))
+                            .share();
                 }else if (getImage(img)!=null){
                     new ShareAction(ma).withText(text)
-                        .withMedia(getImage(img))
-                        .setPlatform(getShareMedia(sharemedia))
-                        .setCallback(getUMShareListener(promise))
-                        .share();
+                            .withMedia(getImage(img))
+                            .setPlatform(getShareMedia(sharemedia))
+                            .setCallback(getUMShareListener(successCallback))
+                            .share();
                 }else {
                     new ShareAction(ma).withText(text)
-                        .setPlatform(getShareMedia(sharemedia))
-                        .setCallback(getUMShareListener(promise))
-                        .share();
+                            .setPlatform(getShareMedia(sharemedia))
+                            .setCallback(getUMShareListener(successCallback))
+                            .share();
                 }
 
             }
         });
 
     }
-    private UMShareListener getUMShareListener(final Promise promise){
+    private UMShareListener getUMShareListener(final Callback successCallback){
         return new UMShareListener() {
             @Override
             public void onStart(SHARE_MEDIA share_media) {
@@ -127,28 +95,20 @@ public class ShareModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onResult(SHARE_MEDIA share_media) {
-                WritableMap result = Arguments.createMap();
-                result.putInt("code",SUCCESS);
-                result.putString("message","success");
-                promise.resolve(result);
+                successCallback.invoke(SUCCESS, "success");
             }
 
             @Override
             public void onError(SHARE_MEDIA share_media, Throwable throwable) {
-                String code =  Integer.toString(ERROR);
-                promise.reject(code,"error", throwable );
+                successCallback.invoke(ERROR, throwable.getMessage());
             }
 
             @Override
             public void onCancel(SHARE_MEDIA share_media) {
-                WritableMap result = Arguments.createMap();
-                result.putInt("code",CANCEL);
-                result.putString("message","cancel");
-                promise.resolve(result);
+                successCallback.invoke(CANCEL, "cancel");
             }
         };
     }
-
     private UMImage getImage(String url){
         if (TextUtils.isEmpty(url)){
             return null;
@@ -163,7 +123,7 @@ public class ShareModule extends ReactContextBaseJavaModule {
         }
     }
     @ReactMethod
-    public void auth(final int  sharemedia, final Promise promise){
+    public void auth(final int  sharemedia, final Callback successCallback){
         runOnMainThread(new Runnable() {
             @Override
             public void run() {
@@ -176,31 +136,23 @@ public class ShareModule extends ReactContextBaseJavaModule {
                     @Override
                     public void onComplete(SHARE_MEDIA share_media, int i, Map<String, String> map) {
                         WritableMap result = Arguments.createMap();
-                        WritableMap res = Arguments.createMap();
                         for (String key:map.keySet()){
                             result.putString(key,map.get(key));
                             Log.e("todoremove","key="+key+"   value"+map.get(key).toString());
                         }
-                        res.putInt("code", 0);
-                        res.putString("message", "success");
-                        res.putMap("data", result);
-                        promise.resolve(res);
+                        successCallback.invoke(0,result,"success");
                     }
 
                     @Override
                     public void onError(SHARE_MEDIA share_media, int i, Throwable throwable) {
                         WritableMap result = Arguments.createMap();
-                        promise.reject("1","error",throwable);
+                        successCallback.invoke(1,result,throwable.getMessage());
                     }
 
                     @Override
                     public void onCancel(SHARE_MEDIA share_media, int i) {
                         WritableMap result = Arguments.createMap();
-                        WritableMap res = Arguments.createMap();
-                        res.putInt("code",2);
-                        res.putString("message", "cancel");
-                        res.putMap("data", result);
-                        promise.resolve(res);
+                        successCallback.invoke(2,result,"cancel");
                     }
                 });
             }
@@ -209,7 +161,7 @@ public class ShareModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void shareboard(final String text, final String img, final String weburl, final String title, final ReadableArray sharemedias, final Promise promise){
+    public void shareboard(final String text, final String img, final String weburl, final String title, final ReadableArray sharemedias, final Callback successCallback){
         runOnMainThread(new Runnable() {
             @Override
             public void run() {
@@ -222,21 +174,21 @@ public class ShareModule extends ReactContextBaseJavaModule {
                         web.setThumb(getImage(img));
                     }
                     new ShareAction(ma).withText(text)
-                        .withMedia(web)
-                        .setDisplayList(getShareMedias(sharemedias))
-                        .setCallback(getUMShareListener(promise))
-                        .open();
+                            .withMedia(web)
+                            .setDisplayList(getShareMedias(sharemedias))
+                            .setCallback(getUMShareListener(successCallback))
+                            .open();
                 }else if (getImage(img)!=null){
                     new ShareAction(ma).withText(text)
-                        .withMedia(getImage(img))
-                        .setDisplayList(getShareMedias(sharemedias))
-                        .setCallback(getUMShareListener(promise))
-                        .open();
+                            .withMedia(getImage(img))
+                            .setDisplayList(getShareMedias(sharemedias))
+                            .setCallback(getUMShareListener(successCallback))
+                            .open();
                 }else {
                     new ShareAction(ma).withText(text)
-                        .setDisplayList(getShareMedias(sharemedias))
-                        .setCallback(getUMShareListener(promise))
-                        .open();
+                            .setDisplayList(getShareMedias(sharemedias))
+                            .setCallback(getUMShareListener(successCallback))
+                            .open();
                 }
 
             }
@@ -328,3 +280,4 @@ public class ShareModule extends ReactContextBaseJavaModule {
         return medias;
     }
 }
+

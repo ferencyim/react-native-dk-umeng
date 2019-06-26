@@ -1,5 +1,6 @@
 package com.dk.umeng;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +32,7 @@ public class DplusReactPackage implements ReactPackage {
      */
     @Override
     public List<NativeModule> createNativeModules(
-        ReactApplicationContext reactContext) {
+            ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
         modules.add(new ShareModule(reactContext));
         modules.add(new PushModule(reactContext));
