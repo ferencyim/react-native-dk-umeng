@@ -393,7 +393,10 @@
 					"$(inherited)",
 					"$(SRCROOT)/RNUMCommon/**",
 				);
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/RNUMCommon/**";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/RNUMCommon/**",
+					"$(SRCROOT)/../../../ios/Pods/Headers/Public/**",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/RNUMCommon/UMCommon",
@@ -420,7 +423,10 @@
 					"$(inherited)",
 					"$(SRCROOT)/RNUMCommon/**",
 				);
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/RNUMCommon/**";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/RNUMCommon/**",
+					"$(SRCROOT)/../../../ios/Pods/Headers/Public/**",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/RNUMCommon/UMCommon",
